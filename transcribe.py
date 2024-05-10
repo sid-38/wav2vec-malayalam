@@ -25,19 +25,28 @@ class MyPipeline(AutomaticSpeechRecognitionPipeline):
 
 class Transcriber:
 
-    def __init__(self, inp_file, out_file):
+    def __init__(self, inp_file=None, out_file=None):
         self.inp_file = inp_file
         self.out_file = out_file
+        self.status = 0
+        self.current_chunk = 0
+        self.total_chunks = 0
+        
 
-    async def transcribe(self):
-
+    def transcribe(self):
+        self.status = 1
         start = time.time()
+        print("Going to sleep for 5")
+        time.sleep(20)
 
         input_array = None
 
-        with open(self.inp_file, 'rb') as f:
-            input_bytes = f.read()
-            input_array = ffmpeg_read(input_bytes, 16000)
+        if self.inp_file:
+            with open(self.inp_file, 'rb') as f:
+                input_bytes = f.read()
+        else:
+            input_bytes = self.inp_bytes
+        input_array = ffmpeg_read(input_bytes, 16000)
         print(len(input_array))
 
         self.total_chunks = len(input_array)
@@ -60,11 +69,12 @@ class Transcriber:
 
         with open(self.out_file, 'w') as f:
             f.write(transcription['text'])
+        self.status = 2
         print(transcription)
         print(f"Took {end-start} seconds")
     
     def get_status(self):
-        return (self.current_chunk, self.total_chunks)
+        return (self.current_chunk, self.total_chunks, self.status)
 
 
 if __name__ == "__main__":
