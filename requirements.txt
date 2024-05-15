@@ -2,6 +2,6 @@ torch
 torchaudio
 tqdm
 transformers
-uvicorn
-fastapi
 flask
+kenlm @ https://github.com/kpu/kenlm/archive/master.zip
+pyctcdecode
