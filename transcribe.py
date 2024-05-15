@@ -1,6 +1,6 @@
 import functools
 import torchaudio
-from transformers import pipeline, Wav2Vec2Processor
+from transformers import pipeline, Wav2Vec2ProcessorWithLM, Wav2Vec2ForCTC
 from transformers.pipelines.automatic_speech_recognition import AutomaticSpeechRecognitionPipeline
 from transformers.pipelines.audio_utils import ffmpeg_read
 import time
@@ -59,16 +59,30 @@ class Transcriber:
 
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-        processor = Wav2Vec2Processor.from_pretrained("gvs/wav2vec2-large-xlsr-malayalam")
-        asr = pipeline(
-                 model="gvs/wav2vec2-large-xlsr-malayalam", pipeline_class=custom_pipeline
-                )
+        processor = Wav2Vec2ProcessorWithLM.from_pretrained("sid330/wav2vec_ml-smc_ngram")
+        model = Wav2Vec2ForCTC.from_pretrained("sid330/wav2vec_ml-smc_ngram")
+        # asr = pipeline(
+        #          model="sid330/wav2vec_ml-common_voice_ngram", pipeline_class=custom_pipeline
+        #         )
 
-        transcription = asr(input_array, chunk_length_s=30, max_new_tokens=444)
+        inputs = processor(input_array, sampling_rate=16000, return_tensors="pt")
+        with torch.no_grad():
+            logits = model(**inputs).logits
+
+        duration = logits.shape[1]
+        tensor = torch.tensor([],dtype=torch.float64)
+        new_logits = torch.cat((logits, tensor.new_full((1,duration,2),-15.0)), dim=2)
+        print(new_logits)
+
+        transcription = processor.batch_decode(new_logits.numpy()).text
+
+
+
+        # transcription = asr(input_array, chunk_length_s=30, max_new_tokens=444)
         end = time.time()
 
         with open(self.out_file, 'w') as f:
-            f.write(transcription['text'])
+            f.write(transcription[0])
         self.status = 2
         print(transcription)
         print(f"Took {end-start} seconds")
