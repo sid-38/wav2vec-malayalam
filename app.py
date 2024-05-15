@@ -1,5 +1,5 @@
 import os
-from flask import Flask, flash, request, redirect, url_for, send_file
+from flask import Flask, flash, request, redirect, url_for, send_file, jsonify, render_template
 import transcribe
 from werkzeug.utils import secure_filename
 import threading
@@ -56,7 +56,8 @@ def trancsribe_file():
                                         'thread': transcribe_thread}
             transcribe_thread.start()
             # transcriber.transcribe(os.path.join("./", filename), os.path.join("./", filename+"transcribed.txt"))
-            return(f"Transcribing with {time_id}")
+            # return(f"Transcribing with {time_id}")
+            return render_template('transcribe_progress.html', id=time_id)
             # return redirect(url_for('download_file', name=filename+"transcribed.txt"))
     return '''
     <!doctype html>
@@ -68,9 +69,15 @@ def trancsribe_file():
     </form>
     '''
 
-@app.route('/uploads/<name>')
-def download_file(name):
-    return send_file(f"./{name}.txt")
+@app.route('/download/<id>')
+def download_file(id):
+    try:
+        id = int(id)
+    except ValueError:
+        return("Pass a valid id")
+
+    out_file = running_threads[id]['out_file']
+    return send_file(out_file)
 
 @app.route('/status/<file_id>')
 def get_status(file_id):
@@ -80,7 +87,7 @@ def get_status(file_id):
         return "Provide the right file id"
 
     status = running_threads[file_id]['transcriber'].get_status()
-    return f"{status[0]} out of {status[1]} with a status of {status[2]}"
+    return jsonify(status)
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5000)

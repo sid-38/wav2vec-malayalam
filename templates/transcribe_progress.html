@@ -1,0 +1,70 @@
+<!doctype html>
+
+<script>
+
+	statusUpdater = setInterval(getStatus, 10000);
+	
+	function getStatus(){
+		 fetch('/status/{{id}}', {
+			  method: "GET", // *GET, POST, PUT, DELETE, etc.
+		})
+			  .then(function(response) {
+				return response.json();
+			  })
+			  .then(function(myJson) {
+				const status = myJson;
+				console.log(status)
+				let progress = 0;
+				if(status[1] != 0){
+					progress = Math.floor((status[0]/status[1])*100);
+				}
+				var pbar = document.getElementById("myprogressBar");
+				pbar.style.width = progress + '%';
+				
+				
+				if(status[2] == 2)
+				{
+					const downloadButton = document.getElementById('downloadButton');
+					downloadButton.style.display = 'inline-block';
+					clearInterval(statusUpdater);
+				}
+				
+			  });
+	  }
+</script> 
+
+<head>
+<style>
+#Progress_Status { 
+  width: 90%; 
+  background-color: #b2b2b2; 
+} 
+  
+#myprogressBar { 
+  width: 0%; 
+  height: 35px; 
+  background-color: #4CAF50; 
+  text-align: center; 
+  line-height: 32px; 
+  color: black; 
+} 
+
+#downloadButton {
+    padding: 1px 6px;
+    border: 1px outset buttonborder;
+    border-radius: 3px;
+    color: buttontext;
+    background-color: buttonface;
+    text-decoration: none;
+	display: none;
+}
+</style>
+</head>
+
+Transcribing with id {{id}}
+
+<div id="Progress_Status"> 
+  <div id="myprogressBar"></div> 
+</div> 
+
+<a href="/download/{{id}}" id="downloadButton">Download</a>
